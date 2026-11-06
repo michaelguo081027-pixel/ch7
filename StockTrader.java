@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class StockTrader {
     public static void main(String[] args) throws FileNotFoundException {
-        Scanner in = new Scanner(new File("aapl_2000_2010.txt"));
+        Scanner in = new Scanner(new File("tiny.txt"));
         String symbol = in.next();
         int n = in.nextInt();
 
@@ -93,7 +93,29 @@ public class StockTrader {
 		}
 		return high;
 	}
-	//Part 3 codes
+	/**
+	 * Part 3 codes, step E answers.
+	 * 
+	 * 1.Moving average did the best. There is no strategy best on any 
+	 *   files.
+	 * 
+	 * 2.Dip Buyer did badly in falling.txt. Since it recognize Mar 2010
+	 *   as the lowest, the strategy decided to buy in. However, it
+	 *   out the price keep falling, so according to the strategy, it 
+	 *   will never sell even it keep falling.
+	 * 
+	 * 3.In falling.txt, moving average beats buy and hold. Since the 
+	 *   price keep falling, you keep losing when you keep holding it. 
+	 *   However, since the price is always lower than 12-month average,
+	 *   with moving average it will never buy in.
+	 * 
+	 * 4.Overall, I would say the outcome is "satisfactory" than simply 
+	 *   buy and hold, because only 5 of 10 stocks earns more with my 
+	 *   strategy than with buy and hold. If I changed my rules to do 
+	 *   better on one file, it did not work well with others. For 
+	 *   example, I tried to decrease the length so it will make more in
+	 *   Apple, yet it performs poor in Amazon.
+	 */
 	public static final double START_CASH = 10000.0;
 	public static final double FEE = 10.0;
 
@@ -127,25 +149,24 @@ public class StockTrader {
 	}
 	
 	public static String decide(double[] history, boolean holding, double boughtAt) {
-		return movingAverage(history, holding, boughtAt);
+		return buyAndHold(history, holding, boughtAt);
 	}
-	
+	//step A
 	public static String buyAndHold(double[] history, boolean holding, double boughtAt){
 		return "BUY";
 	}
-	
+	//step B
 	public static String dipBuyer(double[] history, boolean holding, double boughtAt){
 		String message="";
 		for(int i=0; i<history.length; i++){
 			if(i>=2){
 				if(history[i]<history[i-1]&&history[i-1]<history[i-2])message="BUY";
 				else if(history[i]>=boughtAt*1.1)message="SELL";
-			}
-			
+			}			
 		}
 		return message;
 	}
-	
+	//step C
 	public static String movingAverage(double[] history, boolean holding, double boughtAt){
 		String message="";
 		double sum=0.0;
@@ -153,8 +174,32 @@ public class StockTrader {
 			if(i<11)sum=sum+history[i];
 			else if(i>=11){
 				sum=sum+history[i]-history[i-11];
-				if(holding==false&&history[i]>sum/12)message="BUY";
-				else if(holding==true&&history[i]<sum/12)message="SELL";
+				if(history[i]>sum/12)message="BUY";
+				else if(history[i]<sum/12)message="SELL";
+			}
+		}
+		return message;
+	}
+	/**
+	 * step D
+	 * 
+	 * My strategy:
+	 * 1.You hold for first 20 months.
+	 * 2.You take the average price of last 20 months and:
+	 * 3.If today's price is 10% below the average, you buy;
+	 * 4.If today's price is 10% above the average, you sell;
+	 * 5.Otherwise, you hold.
+	 */
+	public static String myStrategy(double[] history, boolean holding, double boughtAt){
+		String message="";
+		int period=19;
+		double sum=0.0;
+		for(int i=0; i<history.length; i++){
+			if(i<period)sum=sum+history[i];
+			else if(i>=period){
+				sum=sum+history[i]-history[i-period];
+				if(history[i]<(sum/period*0.9))message="BUY";
+				else if(history[i]>(sum/period*1.1))message="SELL";
 			}
 		}
 		return message;
